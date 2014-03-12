@@ -12,6 +12,7 @@
 
 static WiFiDriver   wifiDriver;
 static WiFiNetwork *networkList[MAX_NUMBER_OF_NETWORKS];
+static IpNetwork   *ipNetwork;
 static uint8_t      networkCount;
 
 WiFi::WiFi()
@@ -212,7 +213,6 @@ void WiFi::begin(char* ssid)
 
 void WiFi::begin(char* ssid, const char *passphrase)
 {
-
     char command[100];
     char response[100];
 
@@ -254,6 +254,146 @@ void WiFi::begin(char* ssid, const char *passphrase)
         }
     }
 }
+
+
+/*
+ * Return Connection status.
+ * return: one of the value defined in wl_status_t
+ */
+
+WiFi::wl_status_t WiFi::status()
+{
+    char response[100];
+
+    log(DEBUG, "get wifi status");
+
+    if (wifiDriver.sendAtCommand("at+con_status\r\n", response))
+    {
+        log(DEBUG, "status OK");
+        return WL_CONNECTED;
+    }
+    else
+    {
+        char * errorCode = response + 5;
+        if (!decodeErrorValue(errorCode))
+        {
+            if (strcmp("01", errorCode)) { Serial.println("No network connection"); return WL_DISCONNECTED; }
+            log(ERROR, strcat("unknown error ", errorCode));
+        }
+
+        return WL_DISCONNECTED;
+    }
+}
+
+/*
+ * Disconnect from the network
+ * return: one value of wl_status_t enum
+ */
+
+WiFi::wl_status_t WiFi::disconnect(void)
+{
+    char response[100];
+
+    log(DEBUG, "disconnect from wifi");
+
+    if (wifiDriver.sendAtCommand("at+disc\r\n", response))
+    {
+        log(DEBUG, "disconnected OK");
+        return WL_DISCONNECTED;
+    }
+    else
+    {
+        char * errorCode = response + 5;
+        if (!decodeErrorValue(errorCode))
+        {
+            if (strcmp("01", errorCode)) { Serial.println("No network connection"); return WL_DISCONNECTED; }
+            log(ERROR, strcat("unknown error ", errorCode));
+        }
+
+        return WL_DISCONNECTED;
+    }
+}
+
+/*
+ * function to get the IP network
+ * return: the IP network
+ */
+
+IpNetwork * WiFi::getIpNetwork()
+{
+    char response[100];
+    log(DEBUG, "get the IP Network details");
+
+    if (wifiDriver.sendAtCommand("at+ipconfig\r\n", response))
+    {
+        char tmpStr[MAC_STR_LENGTH];
+
+        convertUint8ToAscii(convertHexToUint8(response[3]), &(tmpStr[0]));
+        tmpStr[2]  = ':';
+        convertUint8ToAscii(convertHexToUint8(response[4]), &(tmpStr[3]));
+        tmpStr[5]  = ':';
+        convertUint8ToAscii(convertHexToUint8(response[5]), &(tmpStr[6]));
+        tmpStr[8]  = ':';
+        convertUint8ToAscii(convertHexToUint8(response[6]), &(tmpStr[9]));
+        tmpStr[11]  = ':';
+        convertUint8ToAscii(convertHexToUint8(response[7]), &(tmpStr[12]));
+        tmpStr[14]  = ':';
+        convertUint8ToAscii(convertHexToUint8(response[8]), &(tmpStr[15]));
+        ipNetwork->setMac(tmpStr);
+
+        memset(tmpStr, '\0', MAC_STR_LENGTH);
+        convertUint8ToAscii(convertHexToUint8(response[9]), &(tmpStr[0]));
+        tmpStr[strlen(tmpStr)]  = '.';
+        convertUint8ToAscii(convertHexToUint8(response[10]), &(tmpStr[strlen(tmpStr)]));
+        tmpStr[strlen(tmpStr)]  = '.';
+        convertUint8ToAscii(convertHexToUint8(response[11]), &(tmpStr[strlen(tmpStr)]));
+        tmpStr[strlen(tmpStr)]  = '.';
+        convertUint8ToAscii(convertHexToUint8(response[12]), &(tmpStr[strlen(tmpStr)]));
+        ipNetwork->setIpAddress(tmpStr);
+
+        memset(tmpStr, '\0', MAC_STR_LENGTH);
+        convertUint8ToAscii(convertHexToUint8(response[13]), &(tmpStr[0]));
+        tmpStr[strlen(tmpStr)]  = '.';
+        convertUint8ToAscii(convertHexToUint8(response[14]), &(tmpStr[strlen(tmpStr)]));
+        tmpStr[strlen(tmpStr)]  = '.';
+        convertUint8ToAscii(convertHexToUint8(response[15]), &(tmpStr[strlen(tmpStr)]));
+        tmpStr[strlen(tmpStr)]  = '.';
+        convertUint8ToAscii(convertHexToUint8(response[16]), &(tmpStr[strlen(tmpStr)]));
+        ipNetwork->setGateway(tmpStr);
+
+        memset(tmpStr, '\0', MAC_STR_LENGTH);
+        convertUint8ToAscii(convertHexToUint8(response[17]), &(tmpStr[0]));
+        tmpStr[strlen(tmpStr)]  = '.';
+        convertUint8ToAscii(convertHexToUint8(response[18]), &(tmpStr[strlen(tmpStr)]));
+        tmpStr[strlen(tmpStr)]  = '.';
+        convertUint8ToAscii(convertHexToUint8(response[19]), &(tmpStr[strlen(tmpStr)]));
+        tmpStr[strlen(tmpStr)]  = '.';
+        convertUint8ToAscii(convertHexToUint8(response[20]), &(tmpStr[strlen(tmpStr)]));
+        ipNetwork->setDnsServer1(tmpStr);
+
+        memset(tmpStr, '\0', MAC_STR_LENGTH);
+        convertUint8ToAscii(convertHexToUint8(response[21]), &(tmpStr[0]));
+        tmpStr[strlen(tmpStr)]  = '.';
+        convertUint8ToAscii(convertHexToUint8(response[22]), &(tmpStr[strlen(tmpStr)]));
+        tmpStr[strlen(tmpStr)]  = '.';
+        convertUint8ToAscii(convertHexToUint8(response[23]), &(tmpStr[strlen(tmpStr)]));
+        tmpStr[strlen(tmpStr)]  = '.';
+        convertUint8ToAscii(convertHexToUint8(response[24]), &(tmpStr[strlen(tmpStr)]));
+        ipNetwork->setDnsServer2(tmpStr);
+    }
+    else
+    {
+        char * errorCode = response + 5;
+        if (!decodeErrorValue(errorCode))
+        {
+            if (strcmp("01", errorCode)) { Serial.println("failed to get IP address"); return NULL; }
+            log(ERROR, String(strcat("unknown error ", errorCode)));
+        }
+        return NULL;
+    }
+}
+
+
 
 
 

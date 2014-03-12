@@ -7,6 +7,7 @@
 
 #include <Arduino.h>
 #include <ParseUtilities.h>
+#include <Logger.h>
 
 
 bool decodeErrorValue(const char * errorCode)
@@ -45,6 +46,18 @@ char convertHexToAscii(uint8_t hex1, uint8_t hex2)
     return hexConvertTable[i][j];
 }
 
+char convertHexToAsciiNumber(uint8_t hex1)
+{
+    uint8_t j = convertHexToUint8(hex1);
+
+    if (j > 9)
+    {
+        log(ERROR, "convertHexToAsciiNumber: bigger than 9");
+        j = 9;
+    }
+    return hexConvertTable[3][j];
+}
+
 uint8_t convertHexToUint8(uint8_t hex)
 {
     uint8_t i = hex - 48;
@@ -63,12 +76,28 @@ uint8_t convertHexToUint8(uint8_t hex1, uint8_t hex2)
 
 void convertUint8ToAscii(uint8_t i, char *result)
 {
-    char big = i / 16;
-    char small = i % 16;
-    if (big < 10) result[0] = big + 48;
-    else result[0] = big + 55;
-    if (small < 10) result[1] = small + 48;
-    else result[1] = small + 55;
-    result[2] = 0x00;
+    char hun = i / 100;
+    char ten = (i % 100) / 10;
+    char one = i % 10;
+
+    if (hun != 0)
+    {
+        result[0] = hun + 48;
+        result[1] = ten + 48;
+        result[2] = one + 48;
+        result[3] = '\0';
+        return;
+    }
+
+    if (ten > 0)
+    {
+        result[0] = ten + 48;
+        result[1] = one + 48;
+        result[2] = '\0';
+        return;
+    }
+
+    result[0] = one + 48;
+    result[1] = '\0';
     return;
 }

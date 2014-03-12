@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include "WiFiNetwork.h"
+#include "IpNetwork.h"
 
 /*
 #include <inttypes.h>
@@ -20,9 +21,6 @@ extern "C" {
 class WiFi
 {
 private:
-//    static void init();
-
-
 
 public:
 
@@ -131,6 +129,45 @@ public:
     void begin(char* ssid, const char *passphrase);
 
     /*
+     * Return Connection status.
+     * return: one of the value defined in wl_status_t
+     */
+
+    typedef enum
+    {
+        WL_NO_SHIELD       = 255,
+        WL_IDLE_STATUS     = 0,
+        WL_NO_SSID_AVAIL,
+        WL_SCAN_COMPLETED,
+        WL_CONNECTED,
+        WL_CONNECT_FAILED,
+        WL_CONNECTION_LOST,
+        WL_DISCONNECTED
+    } wl_status_t;
+
+    wl_status_t status();
+
+    /*
+     * Disconnect from the network
+     * return: one value of wl_status_t enum
+     */
+
+    wl_status_t disconnect();
+
+    /*
+     * function to get the IP network
+     * return: the IP network
+     */
+
+    IpNetwork * getIpNetwork();
+
+
+
+
+
+
+
+    /*
      * Get the first socket available
      */
 //    static uint8_t getSocket();
@@ -192,12 +229,6 @@ public:
      */
  //   void setDNS(IPAddress dns_server1, IPAddress dns_server2);
 
-    /*
-     * Disconnect from the network
-     *
-     * return: one value of wl_status_t enum
-     */
- //   int disconnect(void);
 
     /*
      * Get the interface MAC address.
@@ -258,12 +289,6 @@ public:
 //    uint8_t	encryptionType();
 
 
-    /*
-     * Return Connection status.
-     *
-     * return: one of the value defined in wl_status_t
-     */
- //   uint8_t status();
 
     /*
      * Resolve the given hostname to an IP address.
