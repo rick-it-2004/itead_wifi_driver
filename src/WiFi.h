@@ -64,7 +64,7 @@ public:
      * return: bool, true if successful, false if the networkIndex is not valid
      */
 
-    bool getSsid(uint8_t networkIndex, char * ssid);
+    bool SSID(uint8_t networkIndex, char * ssid);
 
     /*
      * gets the BSSID discovered during the network scan.
@@ -73,7 +73,7 @@ public:
      * return: bool, true if successful, false if the networkIndex is not valid
      */
 
-    bool getBssid(uint8_t networkIndex, char * bssid);
+    bool BSSID(uint8_t networkIndex, char * bssid);
 
     /*
      * gets the channel discovered during the network scan.
@@ -81,7 +81,7 @@ public:
      * return: uint8_t, the channel 1-11 if successful, 0 if the networkIndex is not valid
      */
 
-    uint8_t getChannel(uint8_t networkIndex);
+    uint8_t channel(uint8_t networkIndex);
 
     /*
      * gets the RSSI discovered during the network scan.
@@ -90,7 +90,7 @@ public:
      *                  number, but should be understood to be negative
      */
 
-    uint8_t getRssi(uint8_t networkIndex);
+    uint8_t RSSI(uint8_t networkIndex);
 
     /*
      * Return the encryption type of the networks discovered during the scanNetworks
@@ -161,8 +161,46 @@ public:
 
     IpNetwork * getIpNetwork();
 
+    /*
+     * Get the interface MAC address.
+     * return: pointer to uint8_t array with length WL_MAC_ADDR_LENGTH
+     */
 
+    uint8_t* macAddress(uint8_t* mac);
 
+    /*
+     * Get the interface IP address.
+     * return: Ip address value
+     */
+
+    IPAddress localIP();
+
+    /*
+     * Get the interface subnet mask address.
+     * return: subnet mask address value
+     */
+
+    IPAddress subnetMask();
+
+    /*
+     * Get the gateway ip address.
+     * return: gateway ip address value
+     */
+
+   IPAddress gatewayIP();
+
+   /*
+    * Get the DNS Server 1 ip address.
+    * return: gateway ip address value
+    */
+
+  IPAddress dns1IP();
+  /*
+   * Get the DNS Server 2 ip address.
+   * return: gateway ip address value
+   */
+
+ IPAddress dns2IP();
 
 
 
@@ -229,64 +267,6 @@ public:
      */
  //   void setDNS(IPAddress dns_server1, IPAddress dns_server2);
 
-
-    /*
-     * Get the interface MAC address.
-     *
-     * return: pointer to uint8_t array with length WL_MAC_ADDR_LENGTH
-     */
- //   uint8_t* macAddress(uint8_t* mac);
-
-    /*
-     * Get the interface IP address.
-     *
-     * return: Ip address value
-     */
- //   IPAddress localIP();
-
-    /*
-     * Get the interface subnet mask address.
-     *
-     * return: subnet mask address value
-     */
-//    IPAddress subnetMask();
-
-    /*
-     * Get the gateway ip address.
-     *
-     * return: gateway ip address value
-     */
-//   IPAddress gatewayIP();
-
-    /*
-     * Return the current SSID associated with the network
-     *
-     * return: ssid string
-     */
-//    char* SSID();
-
-    /*
-      * Return the current BSSID associated with the network.
-      * It is the MAC address of the Access Point
-      *
-      * return: pointer to uint8_t array with length WL_MAC_ADDR_LENGTH
-      */
-//    uint8_t* BSSID(uint8_t* bssid);
-
-    /*
-      * Return the current RSSI /Received Signal Strength in dBm)
-      * associated with the network
-      *
-      * return: signed value
-      */
-//    int32_t RSSI();
-
-    /*
-      * Return the Encryption Type associated with the network
-      *
-      * return: one value of wl_enc_type enum
-      */
-//    uint8_t	encryptionType();
 
 
 

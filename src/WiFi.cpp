@@ -124,11 +124,11 @@ WiFiNetwork * getWiFiNetwork(uint8_t networkIndex)
 /*
  * gets the SSID discovered during the network scan.
  * param networkIndex: specify from which network item want to get the information (0 - networkCount -1)
- * param ssid: pointer to the memory into which the SSID will be copies (at least 34 char long)
+ * param ssid: pointer to the memory into which the SSID will be copied (at least 34 char long)
  * return: bool, true if successful, false if the networkIndex is not valid
  */
 
-bool WiFi::getSsid(uint8_t networkIndex, char * ssid)
+bool WiFi::SSID(uint8_t networkIndex, char * ssid)
 {
     if (networkIndex >= networkCount) return false;
     networkList[networkIndex]->getSsid(ssid);
@@ -138,11 +138,11 @@ bool WiFi::getSsid(uint8_t networkIndex, char * ssid)
 /*
  * gets the BSSID discovered during the network scan.
  * param networkIndex: specify from which network item want to get the information (0 - networkCount -1)
- * param ssid: pointer to the memory into which the BSSID will be copies (at least 7 char long)
+ * param ssid: pointer to the memory into which the BSSID will be copied (at least 7 char long)
  * return: bool, true if successful, false if the networkIndex is not valid
  */
 
-bool WiFi::getBssid(uint8_t networkIndex, char * bssid)
+bool WiFi::BSSID(uint8_t networkIndex, char * bssid)
 {
     if (networkIndex >= networkCount) return false;
     networkList[networkIndex]->getBssid(bssid);
@@ -155,7 +155,7 @@ bool WiFi::getBssid(uint8_t networkIndex, char * bssid)
  * return: uint8_t, the channel 1-11 if successful, 0 if the networkIndex is not valid
  */
 
-uint8_t WiFi::getChannel(uint8_t networkIndex)
+uint8_t WiFi::channel(uint8_t networkIndex)
 {
     if (networkIndex >= networkCount) return 0;
     return networkList[networkIndex]->getChannel();
@@ -168,7 +168,7 @@ uint8_t WiFi::getChannel(uint8_t networkIndex)
  *                  number, but should be understood to be negative
  */
 
-uint8_t WiFi::getRssi(uint8_t networkIndex)
+uint8_t WiFi::RSSI(uint8_t networkIndex)
 {
     if (networkIndex >= networkCount) return 0;
     return networkList[networkIndex]->getRssi();
@@ -341,45 +341,25 @@ IpNetwork * WiFi::getIpNetwork()
         convertUint8ToAscii(convertHexToUint8(response[8]), &(tmpStr[15]));
         ipNetwork->setMac(tmpStr);
 
-        memset(tmpStr, '\0', MAC_STR_LENGTH);
-        convertUint8ToAscii(convertHexToUint8(response[9]), &(tmpStr[0]));
-        tmpStr[strlen(tmpStr)]  = '.';
-        convertUint8ToAscii(convertHexToUint8(response[10]), &(tmpStr[strlen(tmpStr)]));
-        tmpStr[strlen(tmpStr)]  = '.';
-        convertUint8ToAscii(convertHexToUint8(response[11]), &(tmpStr[strlen(tmpStr)]));
-        tmpStr[strlen(tmpStr)]  = '.';
-        convertUint8ToAscii(convertHexToUint8(response[12]), &(tmpStr[strlen(tmpStr)]));
-        ipNetwork->setIpAddress(tmpStr);
+        ipNetwork->setIpAddress( convertHexToUint8(response[9]),
+                                 convertHexToUint8(response[10]),
+                                 convertHexToUint8(response[11]),
+                                 convertHexToUint8(response[12]) );
 
-        memset(tmpStr, '\0', MAC_STR_LENGTH);
-        convertUint8ToAscii(convertHexToUint8(response[13]), &(tmpStr[0]));
-        tmpStr[strlen(tmpStr)]  = '.';
-        convertUint8ToAscii(convertHexToUint8(response[14]), &(tmpStr[strlen(tmpStr)]));
-        tmpStr[strlen(tmpStr)]  = '.';
-        convertUint8ToAscii(convertHexToUint8(response[15]), &(tmpStr[strlen(tmpStr)]));
-        tmpStr[strlen(tmpStr)]  = '.';
-        convertUint8ToAscii(convertHexToUint8(response[16]), &(tmpStr[strlen(tmpStr)]));
-        ipNetwork->setGateway(tmpStr);
+        ipNetwork->setGateway( convertHexToUint8(response[13]),
+                               convertHexToUint8(response[14]),
+                               convertHexToUint8(response[15]),
+                               convertHexToUint8(response[16]) );
 
-        memset(tmpStr, '\0', MAC_STR_LENGTH);
-        convertUint8ToAscii(convertHexToUint8(response[17]), &(tmpStr[0]));
-        tmpStr[strlen(tmpStr)]  = '.';
-        convertUint8ToAscii(convertHexToUint8(response[18]), &(tmpStr[strlen(tmpStr)]));
-        tmpStr[strlen(tmpStr)]  = '.';
-        convertUint8ToAscii(convertHexToUint8(response[19]), &(tmpStr[strlen(tmpStr)]));
-        tmpStr[strlen(tmpStr)]  = '.';
-        convertUint8ToAscii(convertHexToUint8(response[20]), &(tmpStr[strlen(tmpStr)]));
-        ipNetwork->setDnsServer1(tmpStr);
+        ipNetwork->setDnsServer1( convertHexToUint8(response[17]),
+                                  convertHexToUint8(response[18]),
+                                  convertHexToUint8(response[19]),
+                                  convertHexToUint8(response[20]) );
 
-        memset(tmpStr, '\0', MAC_STR_LENGTH);
-        convertUint8ToAscii(convertHexToUint8(response[21]), &(tmpStr[0]));
-        tmpStr[strlen(tmpStr)]  = '.';
-        convertUint8ToAscii(convertHexToUint8(response[22]), &(tmpStr[strlen(tmpStr)]));
-        tmpStr[strlen(tmpStr)]  = '.';
-        convertUint8ToAscii(convertHexToUint8(response[23]), &(tmpStr[strlen(tmpStr)]));
-        tmpStr[strlen(tmpStr)]  = '.';
-        convertUint8ToAscii(convertHexToUint8(response[24]), &(tmpStr[strlen(tmpStr)]));
-        ipNetwork->setDnsServer2(tmpStr);
+        ipNetwork->setDnsServer2( convertHexToUint8(response[21]),
+                                  convertHexToUint8(response[22]),
+                                  convertHexToUint8(response[23]),
+                                  convertHexToUint8(response[24]) );
     }
     else
     {
