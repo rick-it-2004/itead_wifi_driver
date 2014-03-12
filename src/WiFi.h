@@ -159,14 +159,14 @@ public:
      * return: the IP network
      */
 
-    IpNetwork * getIpNetwork();
+    IpNetwork getIpNetwork();
 
     /*
      * Get the interface MAC address.
      * return: pointer to uint8_t array with length WL_MAC_ADDR_LENGTH
      */
 
-    uint8_t* macAddress(uint8_t* mac);
+    char * macAddress(char * mac);
 
     /*
      * Get the interface IP address.

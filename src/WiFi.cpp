@@ -319,14 +319,14 @@ WiFi::wl_status_t WiFi::disconnect(void)
  * return: the IP network
  */
 
-IpNetwork * WiFi::getIpNetwork()
+IpNetwork WiFi::getIpNetwork()
 {
     char response[100];
     log(DEBUG, "get the IP Network details");
 
     if (wifiDriver.sendAtCommand("at+ipconfig\r\n", response))
     {
-        char tmpStr[MAC_STR_LENGTH];
+        char tmpStr[WL_MAC_ADDR_LENGTH];
 
         convertUint8ToAscii(convertHexToUint8(response[3]), &(tmpStr[0]));
         tmpStr[2]  = ':';
@@ -363,16 +363,81 @@ IpNetwork * WiFi::getIpNetwork()
     }
     else
     {
+        ipNetwork->setMac("00:00:00:00:00:00");
+        ipNetwork->setIpAddress(0, 0, 0, 0);
+        ipNetwork->setGateway(0, 0, 0, 0);
+        ipNetwork->setDnsServer1(0, 0, 0, 0);
+        ipNetwork->setDnsServer2(0, 0, 0, 0);
+
         char * errorCode = response + 5;
         if (!decodeErrorValue(errorCode))
         {
-            if (strcmp("01", errorCode)) { Serial.println("failed to get IP address"); return NULL; }
+            if (strcmp("01", errorCode)) { Serial.println("failed to get IP address"); return *ipNetwork; }
             log(ERROR, String(strcat("unknown error ", errorCode)));
         }
-        return NULL;
     }
+
+    return *ipNetwork;
 }
 
+/*
+ * Get the interface MAC address.
+ * return: pointer to uint8_t array with length WL_MAC_ADDR_LENGTH
+ */
+
+char * WiFi::macAddress(char * mac)
+{
+    return ipNetwork->getMac(mac);
+}
+
+/*
+ * Get the interface IP address.
+ * return: Ip address value
+ */
+
+IPAddress WiFi::localIP()
+{
+    return ipNetwork->getIpAddress();
+}
+
+/*
+ * Get the interface subnet mask address.
+ * return: subnet mask address value
+ */
+
+IPAddress WiFi::subnetMask()
+{
+    return ipNetwork->getSubnetMask();
+}
+
+/*
+ * Get the gateway ip address.
+ * return: gateway ip address value
+ */
+
+IPAddress WiFi::gatewayIP()
+{
+    return ipNetwork->getIpAddress();
+}
+
+/*
+* Get the DNS Server 1 ip address.
+* return: gateway ip address value
+*/
+
+IPAddress WiFi::dns1IP()
+{
+    return ipNetwork->getIpAddress();
+}
+/*
+* Get the DNS Server 2 ip address.
+* return: gateway ip address value
+*/
+
+IPAddress WiFi::dns2IP()
+{
+    return ipNetwork->getIpAddress();
+}
 
 
 

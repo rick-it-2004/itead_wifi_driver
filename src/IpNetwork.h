@@ -10,12 +10,13 @@
 
 #include <IPAddress.h>
 
-#define MAC_STR_LENGTH 18
-#define IP_STR_LENGTH  16
+#define WL_MAC_ADDR_LENGTH 18
+
 class IpNetwork
 {
-    char mac[MAC_STR_LENGTH];
+    char mac[WL_MAC_ADDR_LENGTH];
     IPAddress *ipAddress;
+    IPAddress *subnetMask;
     IPAddress *gateway;
     IPAddress *dnsServer1;
     IPAddress *dnsServer2;
@@ -24,15 +25,17 @@ public:
     IpNetwork();
     virtual ~IpNetwork();
 
-    void getMac(char *mac);
+    char * getMac(char *mac);
     void setMac(char *mac);
-    IPAddress *getIpAddress();
+    IPAddress getIpAddress();
     void setIpAddress(uint8_t first_octet, uint8_t second_octet, uint8_t third_octet, uint8_t fourth_octet);
-    IPAddress *getGateway();
+    IPAddress getSubnetMask();
+    void setSubnetMask(uint8_t first_octet, uint8_t second_octet, uint8_t third_octet, uint8_t fourth_octet);
+    IPAddress getGateway();
     void setGateway(uint8_t first_octet, uint8_t second_octet, uint8_t third_octet, uint8_t fourth_octet);
-    IPAddress *getDnsServer1();
+    IPAddress getDnsServer1();
     void setDnsServer1(uint8_t first_octet, uint8_t second_octet, uint8_t third_octet, uint8_t fourth_octet);
-    IPAddress *getDnsServer2();
+    IPAddress getDnsServer2();
     void setDnsServer2(uint8_t first_octet, uint8_t second_octet, uint8_t third_octet, uint8_t fourth_octet);
 };
 

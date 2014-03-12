@@ -11,22 +11,26 @@
 
 IpNetwork::IpNetwork()
 {
-    memset(mac, '\0', MAC_STR_LENGTH);
+    memset(mac, '\0', WL_MAC_ADDR_LENGTH);
+    ipAddress  = NULL;
+    gateway    = NULL;
+    dnsServer1 = NULL;
+    dnsServer2 = NULL;
 }
 
-void IpNetwork::getMac(char *mac)
+char * IpNetwork::getMac(char *mac)
 {
-    strcpy(mac, this->mac);
+    return strncpy(mac, this->mac, WL_MAC_ADDR_LENGTH);
 }
 
 void IpNetwork::setMac(char *mac)
 {
-    strncpy(this->mac, mac, MAC_STR_LENGTH);
+    strncpy(this->mac, mac, WL_MAC_ADDR_LENGTH);
 }
 
-IPAddress *IpNetwork::getIpAddress()
+IPAddress IpNetwork::getIpAddress()
 {
-    return this->ipAddress;
+    return *(this->ipAddress);
 }
 
 void IpNetwork::setIpAddress(uint8_t first_octet, uint8_t second_octet, uint8_t third_octet, uint8_t fourth_octet)
@@ -34,9 +38,19 @@ void IpNetwork::setIpAddress(uint8_t first_octet, uint8_t second_octet, uint8_t 
     this->ipAddress = new IPAddress(first_octet, second_octet, third_octet, fourth_octet);
 }
 
-IPAddress *IpNetwork::getGateway()
+IPAddress IpNetwork::getSubnetMask()
 {
-    return this->gateway;
+    return *(this->subnetMask);
+}
+
+void IpNetwork::setSubnetMask(uint8_t first_octet, uint8_t second_octet, uint8_t third_octet, uint8_t fourth_octet)
+{
+    this->subnetMask = new IPAddress(first_octet, second_octet, third_octet, fourth_octet);
+}
+
+IPAddress IpNetwork::getGateway()
+{
+    return *(this->gateway);
 }
 
 void IpNetwork::setGateway(uint8_t first_octet, uint8_t second_octet, uint8_t third_octet, uint8_t fourth_octet)
@@ -44,9 +58,9 @@ void IpNetwork::setGateway(uint8_t first_octet, uint8_t second_octet, uint8_t th
     this->gateway = new IPAddress(first_octet, second_octet, third_octet, fourth_octet);
 }
 
-IPAddress *IpNetwork::getDnsServer1()
+IPAddress IpNetwork::getDnsServer1()
 {
-    return this->dnsServer1;
+    return *(this->dnsServer1);
 }
 
 void IpNetwork::setDnsServer1(uint8_t first_octet, uint8_t second_octet, uint8_t third_octet, uint8_t fourth_octet)
@@ -54,9 +68,9 @@ void IpNetwork::setDnsServer1(uint8_t first_octet, uint8_t second_octet, uint8_t
     this->dnsServer1 = new IPAddress(first_octet, second_octet, third_octet, fourth_octet);
 }
 
-IPAddress *IpNetwork::getDnsServer2()
+IPAddress IpNetwork::getDnsServer2()
 {
-    return this->dnsServer2;
+    return *(this->dnsServer2);
 }
 
 void IpNetwork::setDnsServer2(uint8_t first_octet, uint8_t second_octet, uint8_t third_octet, uint8_t fourth_octet)
