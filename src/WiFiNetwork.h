@@ -21,8 +21,8 @@ public:
     WiFiNetwork(char *description);
     virtual ~WiFiNetwork();
 
-    void    getSsid(char *ssid);
-    void    getBssid(char *bssid);
+    void    getSsid(String & ssid);
+    void    getBssid(String & bssid);
     uint8_t getChannel();
     uint8_t getRssi();
 };

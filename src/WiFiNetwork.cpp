@@ -7,6 +7,7 @@
 
 #include <Arduino.h>
 #include "WiFiNetwork.h"
+#include "Logger.h"
 #include <ParseUtilities.h>
 
 WiFiNetwork::WiFiNetwork()
@@ -36,16 +37,18 @@ WiFiNetwork::WiFiNetwork(char * description)
     channel = convertHexToUint8((uint8_t)description[83], (uint8_t)description[84]);
     rssi = convertHexToUint8((uint8_t)description[85], (uint8_t)description[86]);
     security = convertHexToUint8((uint8_t)description[87], (uint8_t)description[88]);
+
+    log(INFO, ssid);
 }
 
-void WiFiNetwork::getSsid(char *ssid)
+void WiFiNetwork::getSsid(String & ssid)
 {
-    strcpy(ssid, this->ssid);
+    ssid = this->ssid;
 }
 
-void WiFiNetwork::getBssid(char *bssid)
+void WiFiNetwork::getBssid(String & bssid)
 {
-    strcpy(bssid, this->bssid);
+    bssid = this->bssid;
 }
 
 uint8_t WiFiNetwork::getChannel()

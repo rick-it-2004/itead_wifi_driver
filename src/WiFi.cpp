@@ -1,19 +1,19 @@
 /*
- * WiFi.cpp
+ * IteadWifiShieldDriver.cpp
  */
 
 #include "WiFi.h"
-#include "WiFiDriver.h"
+#include "IteadWifiShieldDriver.h"
 #include "Logger.h"
 
 #include <ParseUtilities.h>
 
 #define MAX_NUMBER_OF_NETWORKS 9
 
-static WiFiDriver   wifiDriver;
-static WiFiNetwork *networkList[MAX_NUMBER_OF_NETWORKS];
-static IpNetwork   *ipNetwork;
-static uint8_t      networkCount;
+static IteadWifiShieldDriver wifiDriver;
+static WiFiNetwork          *networkList[MAX_NUMBER_OF_NETWORKS];
+static IpNetwork            *ipNetwork;
+static uint8_t               networkCount;
 
 WiFi::WiFi()
 {
@@ -37,7 +37,7 @@ String WiFi::firmwareVersion ()
 
     log(DEBUG, "read firmware version for WiFi shield");
 
-    if (wifiDriver.sendAtCommand("at+version\r\n", response))
+    if (wifiDriver.sendAtCommand("at+version\r\n", response, 15))
     {
         int i = 3;
         version  = "Host version ";
@@ -59,7 +59,7 @@ String WiFi::firmwareVersion ()
         char * errorCode = response + 5;
         if (!decodeErrorValue(errorCode))
         {
-            log(ERROR, String(strcat("unknown error ", errorCode)));
+            log(ERROR, String("unknown error ") +  errorCode);
         }
         version ="Error\r\n";
     }
@@ -75,22 +75,22 @@ int8_t WiFi::scanNetworks()
 {
     networkCount = 0;
     String number;
-    char response[100];
+    char response[500]; // bug in the shield firmware, each get_scan gets bigger and uses up more memory
     log(DEBUG, "scan all channels 1-11");
 
-    if (wifiDriver.sendAtCommand("at+scan=0\r\n", response))
+    if (wifiDriver.sendAtCommand("at+scan=0\r\n", response, 5))
     {
         networkCount = convertHexToUint8((uint8_t)response[3], (uint8_t)response[4]);
         if (networkCount > MAX_NUMBER_OF_NETWORKS) networkCount = MAX_NUMBER_OF_NETWORKS;
 
-        char getScanString[25];
+        char getScanString[100];
         strcpy(getScanString, "at+get_scan=0\r\n"); // note, index can be 0-9 only
 
         // loop around getting the details for each network found
-        for (int i = 1; i < networkCount+ 1; i++)
+        for (int i = 1; i < networkCount; i++)
         {
             getScanString[12] = 0x30 + i;
-            if (wifiDriver.sendAtCommand(getScanString, response))
+            if (wifiDriver.sendAtCommand(getScanString, response, 46))
             {
                 networkList[i] = new WiFiNetwork(response);
             }
@@ -103,7 +103,7 @@ int8_t WiFi::scanNetworks()
         {
             if (strcmp("01", errorCode)) { Serial.println("cannot find available SSID"); return 0; }
             if (strcmp("02", errorCode)) { Serial.println("cannot find specified SSID"); return 0; }
-            log(ERROR, String(strcat("unknown error ", errorCode)));
+            log(ERROR, String("unknown error ") + errorCode);
         }
     }
     return networkCount;
@@ -128,7 +128,7 @@ WiFiNetwork * getWiFiNetwork(uint8_t networkIndex)
  * return: bool, true if successful, false if the networkIndex is not valid
  */
 
-bool WiFi::SSID(uint8_t networkIndex, char * ssid)
+bool WiFi::SSID(uint8_t networkIndex, String & ssid)
 {
     if (networkIndex >= networkCount) return false;
     networkList[networkIndex]->getSsid(ssid);
@@ -142,7 +142,7 @@ bool WiFi::SSID(uint8_t networkIndex, char * ssid)
  * return: bool, true if successful, false if the networkIndex is not valid
  */
 
-bool WiFi::BSSID(uint8_t networkIndex, char * bssid)
+bool WiFi::BSSID(uint8_t networkIndex, String & bssid)
 {
     if (networkIndex >= networkCount) return false;
     networkList[networkIndex]->getBssid(bssid);
@@ -179,30 +179,32 @@ uint8_t WiFi::RSSI(uint8_t networkIndex)
  * param ssid: Pointer to the SSID string.
  */
 
-void WiFi::begin(char* ssid)
+boolean WiFi::begin(const String & ssid)
 {
     char command[100];
     char response[100];
-    Serial.println("connect");
+    log(INFO, "connect");
 
     strcpy(command, "at+connect=");
-    strcat(command, ssid);
+    strcat(command, ssid.c_str());
     strcat(command, "\r\n");
 
-    if (wifiDriver.sendAtCommand(command, response))
+    if (wifiDriver.sendAtCommand(command, response, 4))
     {
         log(DEBUG, "connected");
+        return true;
     }
     else
     {
         char * errorCode = response + 5;
         if (!decodeErrorValue(errorCode))
         {
-            if (strcmp("01", errorCode)) { Serial.println("No SSID is found"); return; }
-            if (strcmp("02", errorCode)) { Serial.println("connection failed"); return; }
-            log(ERROR, strcat("unknown error ", errorCode));
+            if (strcmp("01", errorCode)) { Serial.println("No SSID is found"); return false; }
+            if (strcmp("02", errorCode)) { Serial.println("connection failed"); return false; }
+            log(ERROR, String("unknown error ") + errorCode);
         }
     }
+    return false;
 }
 
 /*
@@ -211,7 +213,7 @@ void WiFi::begin(char* ssid)
  * param passphrase: Passphrase. Valid characters in a passphrase, must be between ASCII 32-126 (decimal).
  */
 
-void WiFi::begin(char* ssid, const char *passphrase)
+boolean WiFi::begin(const String & ssid, const String & passphrase)
 {
     char command[100];
     char response[100];
@@ -219,29 +221,30 @@ void WiFi::begin(char* ssid, const char *passphrase)
     log(DEBUG, "securely connect");
 
     strcpy(command, "at+psk=");
-    strcat(command, passphrase);
+    strcat(command, passphrase.c_str());
     strcat(command, "\r\n");
 
-    if (wifiDriver.sendAtCommand(command, response))
+    if (wifiDriver.sendAtCommand(command, response, 4))
     {
         log(DEBUG, "password set");
 
         strcpy(command, "at+connect=");
-        strcat(command, ssid);
+        strcat(command, ssid.c_str());
         strcat(command, "\r\n");
 
-        if (wifiDriver.sendAtCommand(command, response))
+        if (wifiDriver.sendAtCommand(command, response, 4))
         {
             log(DEBUG, "connected");
+            return true;
         }
         else
         {
             char * errorCode = response + 5;
             if (!decodeErrorValue(errorCode))
             {
-                if (strcmp("01", errorCode)) { Serial.println("No SSID is found"); return; }
-                if (strcmp("02", errorCode)) { Serial.println("connection failed"); return; }
-                log(ERROR, strcat("unknown error ", errorCode));
+                if (strcmp("01", errorCode)) { Serial.println("No SSID is found"); return false; }
+                if (strcmp("02", errorCode)) { Serial.println("connection failed"); return false; }
+                log(ERROR, String("unknown error ") + errorCode);
             }
         }
     }
@@ -250,9 +253,10 @@ void WiFi::begin(char* ssid, const char *passphrase)
         char * errorCode = response + 5;
         if (!decodeErrorValue(errorCode))
         {
-            log(ERROR, strcat("unknown error ", errorCode));
+            log(ERROR, String("unknown error ") + errorCode);
         }
     }
+    return false;
 }
 
 
@@ -267,7 +271,7 @@ WiFi::wl_status_t WiFi::status()
 
     log(DEBUG, "get wifi status");
 
-    if (wifiDriver.sendAtCommand("at+con_status\r\n", response))
+    if (wifiDriver.sendAtCommand("at+con_status\r\n", response, 4))
     {
         log(DEBUG, "status OK");
         return WL_CONNECTED;
@@ -278,12 +282,42 @@ WiFi::wl_status_t WiFi::status()
         if (!decodeErrorValue(errorCode))
         {
             if (strcmp("01", errorCode)) { Serial.println("No network connection"); return WL_DISCONNECTED; }
-            log(ERROR, strcat("unknown error ", errorCode));
+            log(ERROR, String("unknown error ") + errorCode);
         }
 
         return WL_DISCONNECTED;
     }
 }
+
+
+/*
+ * return true if connected
+ */
+
+boolean isConnected()
+{
+    char response[100];
+
+    log(DEBUG, "get wifi status");
+
+    if (wifiDriver.sendAtCommand("at+con_status\r\n", response, 4))
+    {
+        log(DEBUG, "status OK");
+        return true;
+    }
+    else
+    {
+        char * errorCode = response + 5;
+        if (!decodeErrorValue(errorCode))
+        {
+            if (strcmp("01", errorCode)) { Serial.println("No network connection"); return false; }
+            log(ERROR, String("unknown error ") + errorCode);;
+        }
+    }
+
+    return false;
+}
+
 
 /*
  * Disconnect from the network
@@ -296,7 +330,7 @@ WiFi::wl_status_t WiFi::disconnect(void)
 
     log(DEBUG, "disconnect from wifi");
 
-    if (wifiDriver.sendAtCommand("at+disc\r\n", response))
+    if (wifiDriver.sendAtCommand("at+disc\r\n", response, 4))
     {
         log(DEBUG, "disconnected OK");
         return WL_DISCONNECTED;
@@ -307,7 +341,7 @@ WiFi::wl_status_t WiFi::disconnect(void)
         if (!decodeErrorValue(errorCode))
         {
             if (strcmp("01", errorCode)) { Serial.println("No network connection"); return WL_DISCONNECTED; }
-            log(ERROR, strcat("unknown error ", errorCode));
+            log(ERROR, String("unknown error ") + errorCode);
         }
 
         return WL_DISCONNECTED;
@@ -324,7 +358,7 @@ IpNetwork WiFi::getIpNetwork()
     char response[100];
     log(DEBUG, "get the IP Network details");
 
-    if (wifiDriver.sendAtCommand("at+ipconfig\r\n", response))
+    if (wifiDriver.sendAtCommand("at+ipconfig\r\n", response, 30))
     {
         char tmpStr[WL_MAC_ADDR_LENGTH];
 
@@ -373,7 +407,7 @@ IpNetwork WiFi::getIpNetwork()
         if (!decodeErrorValue(errorCode))
         {
             if (strcmp("01", errorCode)) { Serial.println("failed to get IP address"); return *ipNetwork; }
-            log(ERROR, String(strcat("unknown error ", errorCode)));
+            log(ERROR, String("unknown error ") + errorCode);
         }
     }
 
@@ -385,7 +419,7 @@ IpNetwork WiFi::getIpNetwork()
  * return: pointer to uint8_t array with length WL_MAC_ADDR_LENGTH
  */
 
-char * WiFi::macAddress(char * mac)
+const char * WiFi::macAddress(String & mac)
 {
     return ipNetwork->getMac(mac);
 }
@@ -439,7 +473,38 @@ IPAddress WiFi::dns2IP()
     return ipNetwork->getIpAddress();
 }
 
+/*
+   * pings the host once
+   * return true if the ping worked
+   */
 
+  boolean WiFi::ping(const String & host)
+  {
+      char command[100];
+      char response[100];
 
+      log(DEBUG, "ping host");
+
+      strcpy(command, "at+ping=");
+      strcat(command, host.c_str());
+      strcat(command, "\r\n");
+
+      if (wifiDriver.sendAtCommand(command, response, 4))
+      {
+          log(DEBUG, "ping OK");
+          return true;
+      }
+      else
+      {
+          char * errorCode = response + 5;
+          if (!decodeErrorValue(errorCode))
+          {
+              if (strcmp("01", errorCode)) { Serial.println("Unable to access destination host"); return false; }
+              log(ERROR, String("unknown error ") + errorCode);
+          }
+
+          return false;
+      }
+  }
 
 

@@ -25,8 +25,8 @@ public:
     IpNetwork();
     virtual ~IpNetwork();
 
-    char * getMac(char *mac);
-    void setMac(char *mac);
+    const char * getMac(String & mac);
+    void setMac(const char *mac);
     IPAddress getIpAddress();
     void setIpAddress(uint8_t first_octet, uint8_t second_octet, uint8_t third_octet, uint8_t fourth_octet);
     IPAddress getSubnetMask();

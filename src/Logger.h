@@ -10,14 +10,14 @@
 
 enum DebugLevel
 {
-    NONE,
-    ERROR,
-    WARNING,
-    DEBUG,
-    INFO
+    NONE = 1,
+    ERROR = 2,
+    WARNING = 3,
+    DEBUG = 4,
+    INFO = 5
 };
 
 void setLogLevel(DebugLevel level);
-void log(DebugLevel level, String message);
+void log(DebugLevel level, const String & message);
 
 #endif /* LOGGER_H_ */

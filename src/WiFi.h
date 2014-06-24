@@ -5,27 +5,11 @@
 #include "WiFiNetwork.h"
 #include "IpNetwork.h"
 
-/*
-#include <inttypes.h>
-
-extern "C" {
-	#include "utility/wl_definitions.h"
-	#include "utility/wl_types.h"
-}
-
-#include "IPAddress.h"
-#include "WiFiClient.h"
-#include "WiFiServer.h"
-*/
-
 class WiFi
 {
-private:
+    private:
 
-public:
-
-//    static int16_t 	_state[MAX_SOCK_NUM];
-//    static uint16_t _server_port[MAX_SOCK_NUM];
+    public:
 
     WiFi();
     virtual ~WiFi();
@@ -64,7 +48,7 @@ public:
      * return: bool, true if successful, false if the networkIndex is not valid
      */
 
-    bool SSID(uint8_t networkIndex, char * ssid);
+    bool SSID(uint8_t networkIndex, String & ssid);
 
     /*
      * gets the BSSID discovered during the network scan.
@@ -73,7 +57,7 @@ public:
      * return: bool, true if successful, false if the networkIndex is not valid
      */
 
-    bool BSSID(uint8_t networkIndex, char * bssid);
+    bool BSSID(uint8_t networkIndex, String & bssid);
 
     /*
      * gets the channel discovered during the network scan.
@@ -118,7 +102,7 @@ public:
      * param ssid: Pointer to the SSID string.
      */
 
-    void begin(char* ssid);
+    boolean begin(const String & ssid);
 
     /*
      * Start Wifi connection with passphrase. The most secure supported mode will be automatically selected
@@ -126,7 +110,7 @@ public:
      * param passphrase: Passphrase. Valid characters in a passphrase, must be between ASCII 32-126 (decimal).
      */
 
-    void begin(char* ssid, const char *passphrase);
+    boolean begin(const String & ssid, const String & passphrase);
 
     /*
      * Return Connection status.
@@ -148,6 +132,12 @@ public:
     wl_status_t status();
 
     /*
+     * return true if connected
+     */
+
+    boolean isConnected();
+
+    /*
      * Disconnect from the network
      * return: one value of wl_status_t enum
      */
@@ -166,7 +156,7 @@ public:
      * return: pointer to uint8_t array with length WL_MAC_ADDR_LENGTH
      */
 
-    char * macAddress(char * mac);
+    const char * macAddress(String & mac);
 
     /*
      * Get the interface IP address.
@@ -195,14 +185,27 @@ public:
     */
 
   IPAddress dns1IP();
+
   /*
    * Get the DNS Server 2 ip address.
    * return: gateway ip address value
    */
 
- IPAddress dns2IP();
+  IPAddress dns2IP();
 
+  /*
+   * look up the IP address for the given FQDN.
+   * return:  ip address value
+   */
 
+  IPAddress lookup(const String & FQDN);
+
+  /*
+   * pings the host once
+   * return true if the ping worked
+   */
+
+  boolean ping(const String & host);
 
 
     /*

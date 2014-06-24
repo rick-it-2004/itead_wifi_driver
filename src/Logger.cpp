@@ -15,7 +15,7 @@ void setLogLevel(DebugLevel level)
     debugLevel = level;
 }
 
-void log(DebugLevel level, String message)
+void log(DebugLevel level, const String & message)
 {
-    if (debugLevel == level) Serial.println(message);
+    if (level <= debugLevel) Serial.println(message);
 }

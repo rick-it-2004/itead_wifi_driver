@@ -14,16 +14,18 @@ IpNetwork::IpNetwork()
     memset(mac, '\0', WL_MAC_ADDR_LENGTH);
     ipAddress  = NULL;
     gateway    = NULL;
+    subnetMask = NULL;;
     dnsServer1 = NULL;
     dnsServer2 = NULL;
 }
 
-char * IpNetwork::getMac(char *mac)
+const char * IpNetwork::getMac(String & mac)
 {
-    return strncpy(mac, this->mac, WL_MAC_ADDR_LENGTH);
+    mac = this->mac;
+    return mac.c_str();
 }
 
-void IpNetwork::setMac(char *mac)
+void IpNetwork::setMac(const char *mac)
 {
     strncpy(this->mac, mac, WL_MAC_ADDR_LENGTH);
 }
