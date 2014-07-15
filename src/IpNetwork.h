@@ -9,11 +9,13 @@
 #define IPNETWORK_H_
 
 #include <IPAddress.h>
+#include "ParseUtilities.h"
 
-#define WL_MAC_ADDR_LENGTH 18
+#define WL_MAC_ADDR_LENGTH 20
 
 class IpNetwork
 {
+private:
     char mac[WL_MAC_ADDR_LENGTH];
     IPAddress *ipAddress;
     IPAddress *subnetMask;

@@ -12,7 +12,7 @@
 
 static IteadWifiShieldDriver wifiDriver;
 static WiFiNetwork          *networkList[MAX_NUMBER_OF_NETWORKS];
-static IpNetwork            *ipNetwork;
+static IpNetwork             ipNetwork;
 static uint8_t               networkCount;
 
 WiFi::WiFi()
@@ -56,7 +56,7 @@ String WiFi::firmwareVersion ()
     }
     else
     {
-        char * errorCode = response + 5;
+        const String errorCode = response + 5;
         if (!decodeErrorValue(errorCode))
         {
             log(ERROR, String("unknown error ") +  errorCode);
@@ -98,11 +98,11 @@ int8_t WiFi::scanNetworks()
     }
     else
     {
-        char * errorCode = response + 5;
+        const String errorCode = response + 5;
         if (!decodeErrorValue(errorCode))
         {
-            if (strcmp("01", errorCode)) { Serial.println("cannot find available SSID"); return 0; }
-            if (strcmp("02", errorCode)) { Serial.println("cannot find specified SSID"); return 0; }
+            if (errorCode.equals("01")) { Serial.println("Error 01 - cannot find available SSID"); return 0; }
+            if (errorCode.equals("02")) { Serial.println("Error 02 - cannot find specified SSID"); return 0; }
             log(ERROR, String("unknown error ") + errorCode);
         }
     }
@@ -192,15 +192,17 @@ boolean WiFi::begin(const String & ssid)
     if (wifiDriver.sendAtCommand(command, response, 4))
     {
         log(DEBUG, "connected");
+        setDhcpClient(); // this is needed to get the DHCP servers set up correctly
+        getIpNetwork();
         return true;
     }
     else
     {
-        char * errorCode = response + 5;
+        const String errorCode = response + 5;
         if (!decodeErrorValue(errorCode))
         {
-            if (strcmp("01", errorCode)) { Serial.println("No SSID is found"); return false; }
-            if (strcmp("02", errorCode)) { Serial.println("connection failed"); return false; }
+            if (errorCode.equals("01")) { Serial.println("Error 01 - No SSID is found"); return false; }
+            if (errorCode.equals("02")) { Serial.println("Error 02 - connection failed"); return false; }
             log(ERROR, String("unknown error ") + errorCode);
         }
     }
@@ -235,22 +237,24 @@ boolean WiFi::begin(const String & ssid, const String & passphrase)
         if (wifiDriver.sendAtCommand(command, response, 4))
         {
             log(DEBUG, "connected");
+            setDhcpClient(); // this is needed to get the DHCP servers set up correctly
+            getIpNetwork();
             return true;
         }
         else
         {
-            char * errorCode = response + 5;
+            const String errorCode = response + 5;
             if (!decodeErrorValue(errorCode))
             {
-                if (strcmp("01", errorCode)) { Serial.println("No SSID is found"); return false; }
-                if (strcmp("02", errorCode)) { Serial.println("connection failed"); return false; }
+                if (errorCode.equals("01")) { Serial.println("Error 01 - No SSID is found"); return false; }
+                if (errorCode.equals("02")) { Serial.println("Error 02 - connection failed"); return false; }
                 log(ERROR, String("unknown error ") + errorCode);
             }
         }
     }
     else
     {
-        char * errorCode = response + 5;
+        const String errorCode = response + 5;
         if (!decodeErrorValue(errorCode))
         {
             log(ERROR, String("unknown error ") + errorCode);
@@ -278,10 +282,10 @@ WiFi::wl_status_t WiFi::status()
     }
     else
     {
-        char * errorCode = response + 5;
+        const String errorCode = response + 5;
         if (!decodeErrorValue(errorCode))
         {
-            if (strcmp("01", errorCode)) { Serial.println("No network connection"); return WL_DISCONNECTED; }
+            if (errorCode.equals("01")) { Serial.println("Error 01 - No network connection"); return WL_DISCONNECTED; }
             log(ERROR, String("unknown error ") + errorCode);
         }
 
@@ -307,11 +311,11 @@ boolean isConnected()
     }
     else
     {
-        char * errorCode = response + 5;
+        const String errorCode = response + 5;
         if (!decodeErrorValue(errorCode))
         {
-            if (strcmp("01", errorCode)) { Serial.println("No network connection"); return false; }
-            log(ERROR, String("unknown error ") + errorCode);;
+            if (errorCode.equals("01")) { Serial.println("Error 01 - No network connection"); return false; }
+            log(ERROR, String("unknown error ") + errorCode);
         }
     }
 
@@ -337,10 +341,10 @@ WiFi::wl_status_t WiFi::disconnect(void)
     }
     else
     {
-        char * errorCode = response + 5;
+        const String errorCode = response + 5;
         if (!decodeErrorValue(errorCode))
         {
-            if (strcmp("01", errorCode)) { Serial.println("No network connection"); return WL_DISCONNECTED; }
+            if (errorCode.equals("01")) { Serial.println("Error 01 - No network connection"); return WL_DISCONNECTED; }
             log(ERROR, String("unknown error ") + errorCode);
         }
 
@@ -348,71 +352,6 @@ WiFi::wl_status_t WiFi::disconnect(void)
     }
 }
 
-/*
- * function to get the IP network
- * return: the IP network
- */
-
-IpNetwork WiFi::getIpNetwork()
-{
-    char response[100];
-    log(DEBUG, "get the IP Network details");
-
-    if (wifiDriver.sendAtCommand("at+ipconfig\r\n", response, 30))
-    {
-        char tmpStr[WL_MAC_ADDR_LENGTH];
-
-        convertUint8ToAscii(convertHexToUint8(response[3]), &(tmpStr[0]));
-        tmpStr[2]  = ':';
-        convertUint8ToAscii(convertHexToUint8(response[4]), &(tmpStr[3]));
-        tmpStr[5]  = ':';
-        convertUint8ToAscii(convertHexToUint8(response[5]), &(tmpStr[6]));
-        tmpStr[8]  = ':';
-        convertUint8ToAscii(convertHexToUint8(response[6]), &(tmpStr[9]));
-        tmpStr[11]  = ':';
-        convertUint8ToAscii(convertHexToUint8(response[7]), &(tmpStr[12]));
-        tmpStr[14]  = ':';
-        convertUint8ToAscii(convertHexToUint8(response[8]), &(tmpStr[15]));
-        ipNetwork->setMac(tmpStr);
-
-        ipNetwork->setIpAddress( convertHexToUint8(response[9]),
-                                 convertHexToUint8(response[10]),
-                                 convertHexToUint8(response[11]),
-                                 convertHexToUint8(response[12]) );
-
-        ipNetwork->setGateway( convertHexToUint8(response[13]),
-                               convertHexToUint8(response[14]),
-                               convertHexToUint8(response[15]),
-                               convertHexToUint8(response[16]) );
-
-        ipNetwork->setDnsServer1( convertHexToUint8(response[17]),
-                                  convertHexToUint8(response[18]),
-                                  convertHexToUint8(response[19]),
-                                  convertHexToUint8(response[20]) );
-
-        ipNetwork->setDnsServer2( convertHexToUint8(response[21]),
-                                  convertHexToUint8(response[22]),
-                                  convertHexToUint8(response[23]),
-                                  convertHexToUint8(response[24]) );
-    }
-    else
-    {
-        ipNetwork->setMac("00:00:00:00:00:00");
-        ipNetwork->setIpAddress(0, 0, 0, 0);
-        ipNetwork->setGateway(0, 0, 0, 0);
-        ipNetwork->setDnsServer1(0, 0, 0, 0);
-        ipNetwork->setDnsServer2(0, 0, 0, 0);
-
-        char * errorCode = response + 5;
-        if (!decodeErrorValue(errorCode))
-        {
-            if (strcmp("01", errorCode)) { Serial.println("failed to get IP address"); return *ipNetwork; }
-            log(ERROR, String("unknown error ") + errorCode);
-        }
-    }
-
-    return *ipNetwork;
-}
 
 /*
  * Get the interface MAC address.
@@ -421,7 +360,7 @@ IpNetwork WiFi::getIpNetwork()
 
 const char * WiFi::macAddress(String & mac)
 {
-    return ipNetwork->getMac(mac);
+    return ipNetwork.getMac(mac);
 }
 
 /*
@@ -431,7 +370,7 @@ const char * WiFi::macAddress(String & mac)
 
 IPAddress WiFi::localIP()
 {
-    return ipNetwork->getIpAddress();
+    return ipNetwork.getIpAddress();
 }
 
 /*
@@ -441,7 +380,7 @@ IPAddress WiFi::localIP()
 
 IPAddress WiFi::subnetMask()
 {
-    return ipNetwork->getSubnetMask();
+    return ipNetwork.getSubnetMask();
 }
 
 /*
@@ -451,7 +390,7 @@ IPAddress WiFi::subnetMask()
 
 IPAddress WiFi::gatewayIP()
 {
-    return ipNetwork->getIpAddress();
+    return ipNetwork.getIpAddress();
 }
 
 /*
@@ -461,7 +400,7 @@ IPAddress WiFi::gatewayIP()
 
 IPAddress WiFi::dns1IP()
 {
-    return ipNetwork->getIpAddress();
+    return ipNetwork.getIpAddress();
 }
 /*
 * Get the DNS Server 2 ip address.
@@ -470,7 +409,41 @@ IPAddress WiFi::dns1IP()
 
 IPAddress WiFi::dns2IP()
 {
-    return ipNetwork->getIpAddress();
+    return ipNetwork.getIpAddress();
+}
+
+/*
+ * look up the IP address for the given FQDN.
+ * return:  ip address value
+ */
+
+IPAddress WiFi::lookup(const String & FQDN)
+{
+    char command[100];
+    char response[20];
+
+    strcpy(command, "at+dns=");
+    strcat(command, FQDN.c_str());
+    strcat(command, "\r\n");
+
+    if (wifiDriver.sendAtCommand(command, response, 11))
+    {
+        return IPAddress( convertHexToUint8(response[3], response[4]),
+                          convertHexToUint8(response[5], response[6]),
+                          convertHexToUint8(response[7], response[8]),
+                          convertHexToUint8(response[9], response[10]) );
+    }
+    else
+    {
+        const String errorCode = response + 5;
+        if (!decodeErrorValue(errorCode))
+        {
+            if (errorCode.equals("FD")) { Serial.println("Error FD - DNS receive error"); return IPAddress(0, 0, 0, 0); }
+            if (errorCode.equals("FC")) { Serial.println("Error FC - DNS request failed"); return IPAddress(0, 0, 0, 0); }
+            log(ERROR, String("unknown error ") + errorCode);
+        }
+    }
+    return IPAddress(0, 0, 0, 0);
 }
 
 /*
@@ -496,10 +469,10 @@ IPAddress WiFi::dns2IP()
       }
       else
       {
-          char * errorCode = response + 5;
+          const String errorCode = response + 5;
           if (!decodeErrorValue(errorCode))
           {
-              if (strcmp("01", errorCode)) { Serial.println("Unable to access destination host"); return false; }
+              if (errorCode.equals("01")) { Serial.println("Error 01 - Unable to access destination host"); return false; }
               log(ERROR, String("unknown error ") + errorCode);
           }
 
@@ -507,4 +480,112 @@ IPAddress WiFi::dns2IP()
       }
   }
 
+  void WiFi::setDhcpClient()
+  {
 
+      char response[60];
+      log(DEBUG, "set DHCP client");
+
+      if (wifiDriver.sendAtCommand("at+ipdhcp=0\r\n", response, 30))
+      {
+          ipNetwork.setIpAddress( convertHexToUint8(response[3], response[4]),
+                                  convertHexToUint8(response[5], response[6]),
+                                  convertHexToUint8(response[7], response[8]),
+                                  convertHexToUint8(response[9], response[10]) );
+
+          ipNetwork.setSubnetMask( convertHexToUint8(response[11], response[12]),
+                                   convertHexToUint8(response[13], response[14]),
+                                   convertHexToUint8(response[15], response[16]),
+                                   convertHexToUint8(response[17], response[18]) );
+
+          ipNetwork.setGateway( convertHexToUint8(response[19], response[20]),
+                                convertHexToUint8(response[21], response[22]),
+                                convertHexToUint8(response[23], response[24]),
+                                convertHexToUint8(response[25], response[26]) );
+
+          ipNetwork.setDnsServer1( convertHexToUint8(response[27], response[28]),
+                                   convertHexToUint8(response[29], response[30]),
+                                   convertHexToUint8(response[31], response[32]),
+                                   convertHexToUint8(response[33], response[34]) );
+
+          ipNetwork.setDnsServer2( convertHexToUint8(response[35], response[36]),
+                                   convertHexToUint8(response[37], response[38]),
+                                   convertHexToUint8(response[39], response[40]),
+                                   convertHexToUint8(response[41], response[42]) );
+      }
+      else
+      {
+          ipNetwork.setMac("00:00:00:00:00:00");
+          ipNetwork.setIpAddress(0, 0, 0, 0);
+          ipNetwork.setGateway(0, 0, 0, 0);
+          ipNetwork.setDnsServer1(0, 0, 0, 0);
+          ipNetwork.setDnsServer2(0, 0, 0, 0);
+
+          const String errorCode = response + 5;
+          if (!decodeErrorValue(errorCode))
+          {
+              if (errorCode.equals("01")) { Serial.println("Error 01 - failed to get IP address"); }
+              log(ERROR, String("unknown error ") + errorCode);
+          }
+      }
+  }
+
+  void WiFi::getIpNetwork()
+  {
+      char response[60];
+      log(DEBUG, "get the IP Network details");
+
+      if (wifiDriver.sendAtCommand("at+ipconfig\r\n", response, 30))
+      {
+          char tmpStr[20];
+          memset(tmpStr, '\0', 20);
+
+          tmpStr[0]  = response[3];  tmpStr[1]  = response[4];  tmpStr[2]   = ':';
+          tmpStr[3]  = response[5];  tmpStr[4]  = response[6];  tmpStr[5]   = ':';
+          tmpStr[6]  = response[7];  tmpStr[7]  = response[8];  tmpStr[8]   = ':';
+          tmpStr[9]  = response[9];  tmpStr[10] = response[10]; tmpStr[11]  = ':';
+          tmpStr[12] = response[11]; tmpStr[13] = response[12]; tmpStr[14]  = ':';
+          tmpStr[15] = response[13]; tmpStr[16] = response[14];
+          ipNetwork.setMac(tmpStr);
+
+          ipNetwork.setIpAddress( convertHexToUint8(response[15], response[16]),
+                                  convertHexToUint8(response[17], response[18]),
+                                  convertHexToUint8(response[19], response[20]),
+                                  convertHexToUint8(response[21], response[22]) );
+
+          ipNetwork.setSubnetMask( convertHexToUint8(response[23], response[24]),
+                                   convertHexToUint8(response[25], response[26]),
+                                   convertHexToUint8(response[27], response[28]),
+                                   convertHexToUint8(response[29], response[30]) );
+
+          ipNetwork.setGateway( convertHexToUint8(response[31], response[32]),
+                                convertHexToUint8(response[33], response[34]),
+                                convertHexToUint8(response[35], response[36]),
+                                convertHexToUint8(response[37], response[38]) );
+
+          ipNetwork.setDnsServer1( convertHexToUint8(response[39], response[40]),
+                                   convertHexToUint8(response[41], response[42]),
+                                   convertHexToUint8(response[43], response[44]),
+                                   convertHexToUint8(response[45], response[46]) );
+
+          ipNetwork.setDnsServer2( convertHexToUint8(response[47], response[48]),
+                                   convertHexToUint8(response[49], response[50]),
+                                   convertHexToUint8(response[51], response[52]),
+                                   convertHexToUint8(response[53], response[54]) );
+      }
+      else
+      {
+          ipNetwork.setMac("00:00:00:00:00:00");
+          ipNetwork.setIpAddress(0, 0, 0, 0);
+          ipNetwork.setGateway(0, 0, 0, 0);
+          ipNetwork.setDnsServer1(0, 0, 0, 0);
+          ipNetwork.setDnsServer2(0, 0, 0, 0);
+
+          const String errorCode = response + 5;
+          if (!decodeErrorValue(errorCode))
+          {
+              if (errorCode.equals("01")) { Serial.println("Error 01 - failed to get IP address"); }
+              log(ERROR, String("unknown error ") + errorCode);
+          }
+      }
+  }

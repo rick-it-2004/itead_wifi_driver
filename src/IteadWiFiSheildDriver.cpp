@@ -55,13 +55,14 @@ bool IteadWifiShieldDriver::sendAtCommand(String command, char *response, unsign
     String str = Serial3.readString();
     Serial3.flush();
 
-    // FOR DEBUG PURPOSES
+    /*// FOR DEBUG PURPOSES
+    Serial.print("*SOS*");
     for(int i = 0; !((str.charAt(i) == '\r') && (str.charAt(i+1) == '\n')); i++)
     {
         sprintf(tmpStr, "%02X", (str.charAt(i) & 0x00FF));
         Serial.print(tmpStr);
     }
-    Serial.print("\r\n");
+    Serial.print("*EOS*\r\n");
     //END DEBUG */
 
     if (str.startsWith("OK") > 0)
@@ -86,5 +87,6 @@ bool IteadWifiShieldDriver::sendAtCommand(String command, char *response, unsign
         Serial.println(response);
         return false;
     }
+    delay(1000);
 }
 

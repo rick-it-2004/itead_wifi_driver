@@ -14,6 +14,9 @@ class HttpClient
 {
 public:
     HttpClient();
+
+    String httpGet(const String & url);
+
     virtual ~HttpClient();
 };
 

@@ -8,6 +8,8 @@
 class WiFi
 {
     private:
+        void getIpNetwork();
+        void setDhcpClient();
 
     public:
 
@@ -143,13 +145,6 @@ class WiFi
      */
 
     wl_status_t disconnect();
-
-    /*
-     * function to get the IP network
-     * return: the IP network
-     */
-
-    IpNetwork getIpNetwork();
 
     /*
      * Get the interface MAC address.

@@ -10,12 +10,12 @@
 #include <Logger.h>
 
 
-bool decodeErrorValue(const char * errorCode)
+bool decodeErrorValue(const String errorCode)
 {
-    if (strcmp("FF", errorCode)) { Serial.println("error - Input parameter error"); return true; }
-    if (strcmp("FE", errorCode)) { Serial.println("error - Bad command error"); return true; }
-    if (strcmp("F6", errorCode)) { Serial.println("error - System error"); return true; }
-    if (strcmp("F5", errorCode)) { Serial.println("error - Fatal error"); return true; }
+    if (errorCode.equals("FF")) { Serial.println("error FF - Input parameter error"); return true; }
+    if (errorCode.equals("FE")) { Serial.println("error FE - Bad command error"); return true; }
+    if (errorCode.equals("F6")) { Serial.println("error F6 - System error"); return true; }
+    if (errorCode.equals("F5")) { Serial.println("error F5 - Fatal error"); return true; }
     return false;
 }
 
@@ -74,6 +74,15 @@ uint8_t convertHexToUint8(uint8_t hex1, uint8_t hex2)
     return (i * 16) + j;
 }
 
+uint16_t convertHexToUint16(uint8_t hex1, uint8_t hex2)
+{
+    int i = hex1 - 48;
+    if (i > 9) i = i - 7;
+    int j = hex2 - 48;
+    if (j > 9) j = j - 7;
+    return (i * 16) + j;
+}
+
 void convertUint8ToAscii(uint8_t i, char *result)
 {
     char hun = i / 100;
@@ -100,4 +109,12 @@ void convertUint8ToAscii(uint8_t i, char *result)
     result[0] = one + 48;
     result[1] = '\0';
     return;
+}
+
+String convertUint8ToAscii(uint8_t i)
+{
+    char data[4];
+    memset(data, '\0', 4);
+    convertUint8ToAscii(i, data);
+    return String(data);
 }

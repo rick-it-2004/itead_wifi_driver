@@ -1,16 +1,19 @@
 
 #include <Arduino.h>
 #include "WiFi.h"
+#include "HttpClient.h"
 #include "Logger.h"
+#include "ParseUtilities.h"
 
 void printStatus (WiFi::wl_status_t status);
 
 int aLed = 0x0D;
 
 static WiFi wifiShield;
+static HttpClient client;
 
-String ssidHome       = "xxxxxxxxxxxxx";
-String ssidUrbanPad   = "yyyyyyyyyyyyy";
+String ssidHome       = "fred";
+String ssidUrbanPad   = "freds other";
 String testLocalPing  = "192.168.1.1";
 String testRemotePing = "8.8.8.8";
 
@@ -32,8 +35,9 @@ void setup(void)
     log(INFO, "Look for either the home or the urban pad SSID");
 
     String networkSsid;
+    boolean connected = false;
 
-    for (int networkIndex = 1; networkIndex < numberOfNetworks; networkIndex++)
+    for (int networkIndex = 0; networkIndex < numberOfNetworks; networkIndex++)
     {
         if (wifiShield.SSID(networkIndex, networkSsid) == true)
         {
@@ -47,15 +51,17 @@ void setup(void)
                 if (wifiShield.begin(ssidHome) == true)
                 {
                     log(INFO, "SUCCESS!");
+                    connected = true;
                     break;
                 }
             }
             else if (networkSsid.equals(ssidUrbanPad))
             {
                 log(INFO, "started on urban pad");
-                if (wifiShield.begin(ssidUrbanPad, "12341234") == true)
+                if (wifiShield.begin(ssidUrbanPad, "34563456") == true)
                 {
                     log(INFO, "SUCCESS!");
+                    connected = true;
                     break;
                 }
             }
@@ -64,6 +70,11 @@ void setup(void)
                 log(INFO, "skip this network");
             }
         }
+    }
+
+    if (connected == true)
+    {
+        log(DEBUG,"system initialised");
     }
 } /* End of setup */
 
@@ -76,6 +87,14 @@ void loop(void)
     printStatus(wifiShield.status());
     wifiShield.ping(testLocalPing);
     wifiShield.ping(testRemotePing);
+
+    IPAddress host = wifiShield.lookup("www.bbc.co.uk");
+    String destination = convertUint8ToAscii(host[0]) + "." +
+                         convertUint8ToAscii(host[1]) + "." +
+                         convertUint8ToAscii(host[2]) + "." +
+                         convertUint8ToAscii(host[3]);
+    log(INFO, client.httpGet(destination));
+
 } /* End of loop */
 
 void printStatus (WiFi::wl_status_t status)
